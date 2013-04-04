@@ -10,7 +10,7 @@ Gem::Specification.new do |gem|
                          activities, such as registering with #method_missing and #respond_to_missing?
                          are handled automatically.  Facilitates method name pattern-specific method
                          generation as well.  Generated methods are added to the missing method receiver.}
-  gem.homepage      = ""
+  gem.homepage      = "http://github.com/kevinburleigh75/eager_beaver"
 
   gem.files         = `git ls-files`.split($\)
   gem.executables   = gem.files.grep(%r{^bin/}).map{ |f| File.basename(f) }
