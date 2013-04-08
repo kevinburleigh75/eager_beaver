@@ -10,10 +10,15 @@ module EagerBeaver
     def initialize(&block)
       block.call(self)
 
-      raise "matcher lambda must be given" \
+      raise "matcher must be given" \
         if matcher.nil?
-      raise "matcher new_method_code_maker lambda must be given" \
+      raise "matcher lmust be a lambda" \
+        unless matcher.lambda?
+
+      raise "new_method_code_maker must be given" \
         if new_method_code_maker.nil?
+      raise "new_method_code_maker must be a lambda" \
+        unless new_method_code_maker.lambda?
 
       self
     end
