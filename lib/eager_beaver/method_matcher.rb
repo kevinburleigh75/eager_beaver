@@ -2,27 +2,54 @@ module EagerBeaver
 
   class MethodMatcher
 
-    attr_accessor :original_caller
+    attr_accessor :original_receiver
     attr_accessor :matcher
-    attr_accessor :new_method
     attr_accessor :new_method_code_maker
     attr_accessor :missing_method_name
 
-    def initialize(block)
+    def initialize(&block)
       block.call(self)
 
-      raise ArgumentError, "matcher Proc must be given" \
+      raise "matcher lambda must be given" \
         if matcher.nil?
-      raise ArgumentError, "exactly one of new_method or new_method_code_maker Proc must be given" \
-        if (new_method && new_method_code_maker) || (new_method.nil? && new_method_code_maker.nil?)
+      raise "matcher new_method_code_maker lambda must be given" \
+        if new_method_code_maker.nil?
 
       self
     end
 
+    def match=(lambda_proc)
+      self.matcher = lambda_proc
+    end
+
     def match?(method_name)
       self.missing_method_name = method_name.to_s
-      self.instance_eval &matcher
+      return evaluate(matcher)
     end
+
+    def new_method_code=(lambda_proc)
+      self.new_method_code_maker = lambda_proc
+    end
+
+    def evaluate(inner)
+      outer = lambda { |*args|
+        args.shift
+        inner.call(*args)
+      }
+      self.instance_eval &outer
+    end
+
+    def method_missing(method_name, *args, &block)
+      if /\A(?<attr_name>\w+)=?\z/ =~ method_name
+        code = %Q{
+          attr_accessor :#{attr_name}
+        }
+        self.singleton_class.instance_eval code, __FILE__, __LINE__ + 1
+        return self.send(method_name, *args, &block)
+      end
+      super
+    end
+
   end
 
 end

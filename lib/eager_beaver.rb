@@ -9,14 +9,12 @@ module EagerBeaver
 
   def method_missing(method_name, *args, &block)
     self.class.method_matchers.each do |method_matcher|
-      method_matcher.original_caller = self
-      if method_matcher.match?(method_name)
-        if method_matcher.new_method
-          self.class.send(:define_method, method_name, method_matcher.new_method)
-        elsif method_matcher.new_method_code_maker
-          method_string = method_matcher.instance_eval &method_matcher.new_method_code_maker
-          self.class.class_eval method_string, __FILE__, __LINE__ + 1
-        end
+      mm = method_matcher.dup
+      self.class.context = mm
+      mm.original_receiver = self
+      if mm.match?(method_name)
+        method_string = mm.evaluate mm.new_method_code_maker
+        self.class.class_eval method_string, __FILE__, __LINE__ + 1
         return self.send(method_name, *args, &block)
       end
     end
@@ -36,8 +34,10 @@ module EagerBeaver
     end
 
     def add_method_matcher(&block)
-      method_matchers << MethodMatcher.new(block)
+      method_matchers << MethodMatcher.new(&block)
     end
+
+    attr_accessor :context
   end
 
 end
