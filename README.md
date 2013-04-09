@@ -1,10 +1,14 @@
 # EagerBeaver
 
-Facilitates method_missing, respond_to_missing?, and method-generation activities
-by providing a simple interface for adding method generators.  All related
-activities, such as registering with #method_missing and #respond_to_missing?
-are handled automatically.  Facilitates method name pattern-specific method
-generation as well.  Generated methods are added to the missing method receiver.
+## Overview
+
+`EagerBeaver` provides an interface for adding `#method_missing`-related abilities
+to a class or module.  These abilities can be added dymically and cumulatively
+without accidentally overriding or removing previously-added matchers. Abilities 
+added through `EagerBeaver` are automatically reflected in calls to `#respond_to?`
+and `#method`.  Generated methods are automatically added to the including class
+or module so subsequent calls don't trigger `#method_missing`.  In the event
+a method cannot be matched, `super`'s `#method_missing` is automatically invoked.
 
 ## Installation
 
@@ -22,7 +26,7 @@ Or install it yourself as:
 
 ## Usage
 
-### Overview
+### Inclusion
 
 Any class or module which includes `EagerBeaver` will gain the `add_method_matcher`
 pseudo-keyword, which [indirectly] yields an `EagerBeaver::MethodMatcher` to the
@@ -197,10 +201,10 @@ generates the code:
   end
 ```
 and outputs:
-> method \#make_widget has been called
-> \#make_widget was originally called on \#\<NeedsMethods:0x007fa1bc17f498\>
-> widget was passed from matching to code generation
-> the current call has arguments: hi
+> method \#make_widget has been called<br/>
+> \#make_widget was originally called on \#\<NeedsMethods:0x007fa1bc17f498\><br/>
+> widget was passed from matching to code generation<br/>
+> the current call has arguments: hi<br/>
 > result = hi
 
 Note that the following lines do NOT trigger `#method_missing` because both methods
