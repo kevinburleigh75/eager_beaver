@@ -3,12 +3,18 @@
 ## Overview
 
 `EagerBeaver` provides an interface for adding `#method_missing`-related abilities
-to a class or module.  These abilities can be added dymically and cumulatively
-without accidentally overriding or removing previously-added matchers. Abilities 
-added through `EagerBeaver` are automatically reflected in calls to `#respond_to?`
-and `#method`.  Generated methods are automatically added to the including class
-or module so subsequent calls don't trigger `#method_missing`.  In the event
-a method cannot be matched, `super`'s `#method_missing` is automatically invoked.
+to a class or module.
+
+## Key Features
+
+- Method matchers can be added dynamically and cumulatively, reducing the risk
+  of accidentally altering or removing previously-added functionality.
+- Matched methods are automatically reflected in calls to `#respond_to?` and
+  `#method`, DRY-ing up code by centralizing method-matching logic.
+- Matched methods are automatically added to the including class/module and
+  invoked.  Subsequent calls won't trigger `#method_missing`.
+- When a method cannot be matched, `super`'s `#method_missing` is automatically
+  invoked.
 
 ## Installation
 
@@ -201,10 +207,10 @@ generates the code:
   end
 ```
 and outputs:
-> method \#make_widget has been called<br/>
-> \#make_widget was originally called on \#\<NeedsMethods:0x007fa1bc17f498\><br/>
-> widget was passed from matching to code generation<br/>
-> the current call has arguments: hi<br/>
+> method \#make_widget has been called
+> \#make_widget was originally called on \#\<NeedsMethods:0x007fa1bc17f498\>
+> widget was passed from matching to code generation
+> the current call has arguments: hi
 > result = hi
 
 Note that the following lines do NOT trigger `#method_missing` because both methods
@@ -215,15 +221,15 @@ puts nm2.make_widget("hello")
 ```
 This can be seen by examining the identity of the original receiver in the output:
 
-> **method \#make_thingy has been called**
-> **\#make_thingy was originally called on \#\<NeedsMethods:0x007fa1bc17f498\>**
-> **thingy was passed from matching to code generation**
+> **method \#make_thingy has been called**<br/>
+> **\#make_thingy was originally called on \#\<NeedsMethods:0x007fa1bc17f498\>**<br/>
+> **thingy was passed from matching to code generation**<br/>
 > the current call has arguments: 20
 > result = 20
 
-> **method \#make_widget has been called**
-> **\#make_widget was originally called on \#\<NeedsMethods:0x007fa1bc17f498\>**
-> **widget was passed from matching to code generation**
+> **method \#make_widget has been called**<br/>
+> **\#make_widget was originally called on \#\<NeedsMethods:0x007fa1bc17f498\>**<br/>
+> **widget was passed from matching to code generation**<br/>
 > the current call has arguments: hello
 > result = hello
 
