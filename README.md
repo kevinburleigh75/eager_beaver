@@ -117,13 +117,13 @@ method won't need to invoke the `#method_missing` infrastructure.
 
 ## Key Features
 
-- Method matchers can be added dynamically and independently, reducing the risk
+- Method handlers can be added dynamically and independently, reducing the risk
   of accidentally altering or removing previously-added functionality.
-- Matched methods are automatically reflected in calls to `#respond_to?` and
+- Handled methods are automatically reflected in calls to `#respond_to?` and
   `#method`.
-- Matched methods are automatically added to the including class/module and
+- Handled methods are automatically added to the including class/module and
   invoked.  Subsequent calls won't trigger `#method_missing`.
-- When a method cannot be matched, `super`'s `#method_missing` is automatically
+- When a method cannot be handled, `super`'s `#method_missing` is automatically
   invoked.
 
 ## Installation
@@ -187,14 +187,14 @@ missing methods of the form `#pattern1_<data>`:
 
 ### Context
 
-As the example shows, each `MethodMatcher` contains a `context` which provides:
+As the example shows, each `MethodHandler` contains a `context` which provides:
 
 - the name of the missing method (`context.missing_method_name`)
 - the original method receiver instance (`context.original_receiver`)
 - a place to stash information (dynamically-generated accessors `context.<attr_name>` and `context.<attr_name>=`)
 
 This `context` is shared between the `match` and `handle` lambdas, and
-is reset between uses of each `MethodMatcher`.
+is reset between uses of each `MethodHandler`.
 
 ### Handling
 
