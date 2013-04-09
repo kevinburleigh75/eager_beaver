@@ -237,6 +237,14 @@ String substitutions which were part of the generated code body (emphasized)
 reflect the circumstances of the first set of method calls, as opposed to 
 those which reflect the current call's argument.
 
+Finally, the call:
+`nm2.dont_make_this`
+will cause `NeedsMethods` to examine all of its `MethodMatcher`s and finally call
+`super`'s `#method_missing`.  Because no superclass of `NeedsMethods` handles
+`#dont_make_this`, the output is:
+
+> undefined method `dont_make_this' for \#\<NeedsMethods:0x007f8e2b991f90\> (NoMethodError)
+
 ## Contributing
 
 1. Fork it
