@@ -34,23 +34,30 @@ class NeedsMethods
   end
 end
 
-nm = NeedsMethods.new
-nm.pattern1_match
+nm1 = NeedsMethods.new
+puts "#{nm1.methods.grep /pattern/}"
+# => []                                     ## overriding #method_missing doesn't actually add methods
+puts "#{nm1.respond_to? :pattern1_match}"
+# => true                                   ## #respond_to_missing? in action!
+puts "#{nm1.method :pattern1_match}"
+# => #<Method: NeedsMethods#pattern1_match> ## #respond_to_missing? in action!
+nm1.pattern1_match
 # => pattern1: match
-puts "#{nm.respond_to? :pattern1_match}"
-# => true
-puts "#{nm.method :pattern1_match}"
-# => #<Method: NeedsMethods#pattern1_match>
 
-nm.pattern2_another_match
+nm2 = NeedsMethods.new
+puts "#{nm2.methods.grep /pattern/}"
+# => []                                     ## missing method was NOT added!
+nm2.pattern1_match
+# => pattern1: match
+nm2.pattern2_another_match
 # => pattern2: another match
-puts "#{nm.respond_to? :pattern2_another_match}"
-# => true
-puts "#{nm.method :pattern2_another_match}"
-# => #<Method: NeedsMethods#pattern2_another_match>
+puts "#{nm1.methods.grep /pattern/}"
+# => []                                     ## missing methods were NOT added!
+puts "#{nm2.methods.grep /pattern/}"
+# => []                                     ## missing methods were NOT added!
 
 nm.blah
-# => ...:in `method_missing': undefined method `blah' for #<NeedsMethods:0x007fb37b086548> (NoMethodError)
+# => undefined method `blah' for #<NeedsMethods:0x007fb37b086548> (NoMethodError)
 ```
 
 ## Downsides to the Baseline Implementation
@@ -262,7 +269,7 @@ nm1.pattern1_match
 nm2 = NeedsMethods.new
 
 puts "#{nm2.methods.grep /pattern/}"
-# => [:pattern1_match]                      ## #pattern1_match added to NeedsMethods by call on instance nm1
+# => [:pattern1_match]                      ## missing method added to NeedsMethods!
 nm2.pattern1_match
 # => pattern1: match                        ## no call to #method_missing
 nm2.pattern2_another_match
