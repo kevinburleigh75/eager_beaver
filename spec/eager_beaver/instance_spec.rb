@@ -67,12 +67,12 @@ describe "instance of EagerBeaver includer" do
     end
 
     it "returns a Method for matched method names" do
-      expect(@instance.method(:aaa_1).class).to be == Method
-      expect(@instance.method(:aaa_2).class).to be == Method
+      expect{ @instance.method :aaa_1}.to_not raise_error
+      expect{ @instance.method :aaa_2}.to_not raise_error
     end
 
     it "returns nil for unmatched method names" do
-      expect{ @instance.method(:bbb_1) }.to raise_error
+      expect{ @instance.method :bbb_1 }.to raise_error
     end
 
   end
