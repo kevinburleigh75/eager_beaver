@@ -167,8 +167,8 @@ and a lambda for handling any method names it matches:
 
 ```ruby
   add_method_handler do |mh|
-    mh.match = lambda { ... }
-    mh.handle = lambda { ...}
+    mh.match  = lambda { ... }
+    mh.handle = lambda { ... }
   end
 end
 ```
@@ -196,7 +196,7 @@ As the example shows, each `MethodMatcher` contains a `context` which provides:
 This `context` is shared between the `match` and `handle` lambdas, and
 is reset between uses of each `MethodMatcher`.
 
-### Code Generation
+### Handling
 
 The `handle` lambda should return a string which will create the
 missing method in `NeedsMethods`:
@@ -247,13 +247,7 @@ class NeedsMethods
     }
   end
 end
-```
 
-## Execution
-
-Given the `NeedsMethods` class above:
-
-```ruby
 nm1 = NeedsMethods.new
 
 puts "#{nm1.methods.grep /pattern/}"
