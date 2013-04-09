@@ -24,7 +24,7 @@ Or install it yourself as:
 
 ### Overview
 
-Any class or module which includes EagerBeaver will gain the `add_method_matcher`
+Any class or module which includes `EagerBeaver` will gain the `add_method_matcher`
 pseudo-keyword, which [indirectly] yields an `EagerBeaver::MethodMatcher` to the
 given block:
 
@@ -40,11 +40,11 @@ class NeedsMethods
 end
 ```
 
-The resulting `MethodMatcher` is added to the end of a `MethodMatcher` list
+In this case, the resulting `MethodMatcher` is added to the end of a `MethodMatcher` list
 associated with `NeedsMethods`.
 
 Each `MethodMatcher` needs two things: a lambda for matching missing method names
-and a lambda for creating the code for any matched method names:
+and a lambda for creating the code for any method names it matches:
 
 ```ruby
   add_method_matcher do |mm|
@@ -71,11 +71,13 @@ missing methods of the form `#make_<attr_name>`:
 ### Context
 
 As the example shows, each `MethodMatcher` contains a `context` which provides:
-- the name of the missing method
-- the original method receiver instance
-- a place to stash information
-This `context` is shared between the matching and code-generation lambdas, and
-is reset between missing method calls.
+
+- the name of the missing method (`context.missing_method_name`)
+- the original method receiver instance (`context.original_receiver`)
+- a place to stash information (`context.<attr_name>` and `context.<attr_name>=`)
+
+This `context` is shared between the `match` and `new_method_code` lambdas, and
+is reset between uses of each `MethodMatcher`.
 
 ### Code Generation
 
@@ -98,7 +100,7 @@ missing method in `NeedsMethods`:
 ```
 
 As the example shows, it is perfectly reasonable to take advantage of work done
-by the `match` lambda (parsing of `<attr_name>`).
+by the `match` lambda (in this case, the parsing of `<attr_name>`).
 
 After the generated code is inserted into `NeedsMethods`, the missing method 
 call is resent to the original receiver.
@@ -174,8 +176,8 @@ following methods to be inserted to `NeedsMethods`:
 and when `#make_thingy` is resent to `nm1`, the existing method is called and 
 outputs:
 
-> method #make_thingy has been called
-> #make_thingy was originally called on #<NeedsMethods:0x007fa1bc17f498>
+> method \#make_thingy has been called
+> \#make_thingy was originally called on \#\<NeedsMethods:0x007fa1bc17f498\>
 > thingy was passed from matching to code generation
 > the current call has arguments: 10
 > result = 10
@@ -195,8 +197,8 @@ generates the code:
   end
 ```
 and outputs:
-> method #make_widget has been called
-> #make_widget was originally called on #<NeedsMethods:0x007fa1bc17f498>
+> method \#make_widget has been called
+> \#make_widget was originally called on \#\<NeedsMethods:0x007fa1bc17f498\>
 > widget was passed from matching to code generation
 > the current call has arguments: hi
 > result = hi
@@ -209,14 +211,14 @@ puts nm2.make_widget("hello")
 ```
 This can be seen by examining the identity of the original receiver in the output:
 
-> **method #make_thingy has been called**
-> **#make_thingy was originally called on #<NeedsMethods:0x007fa1bc17f498>**
+> **method \#make_thingy has been called**
+> **\#make_thingy was originally called on \#\<NeedsMethods:0x007fa1bc17f498\>**
 > **thingy was passed from matching to code generation**
 > the current call has arguments: 20
 > result = 20
 
-> **method #make_widget has been called**
-> **#make_widget was originally called on #<NeedsMethods:0x007fa1bc17f498>**
+> **method \#make_widget has been called**
+> **\#make_widget was originally called on \#\<NeedsMethods:0x007fa1bc17f498\>**
 > **widget was passed from matching to code generation**
 > the current call has arguments: hello
 > result = hello
