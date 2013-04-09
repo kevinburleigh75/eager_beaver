@@ -23,7 +23,10 @@ module EagerBeaver
 
   def respond_to_missing?(method_name, include_private=false)
     self.class.method_matchers.each do |method_matcher|
-      return true if method_matcher.match?(method_name)
+      mm = method_matcher.dup
+      self.class.context = mm
+      mm.original_receiver = self
+      return true if mm.match?(method_name)
     end
     super
   end

@@ -1,6 +1,6 @@
 require 'spec_helper'
 
-describe "matcher context" do
+describe "EagerBeaver matcher context" do
 
   describe "#missing_method_name" do
     it "provides the name of the missing method" do
