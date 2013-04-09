@@ -84,7 +84,7 @@ As the example shows, each `MethodMatcher` contains a `context` which provides:
 
 - the name of the missing method (`context.missing_method_name`)
 - the original method receiver instance (`context.original_receiver`)
-- a place to stash information (`context.<attr_name>` and `context.<attr_name>=`)
+- a place to stash information (dynamically-generated accessors `context.<attr_name>` and `context.<attr_name>=`)
 
 This `context` is shared between the `match` and `new_method_code` lambdas, and
 is reset between uses of each `MethodMatcher`.
@@ -163,7 +163,7 @@ puts nm2.make_widget("hello")
 nm2.dont_make_this
 ```
 
-As instances of `NeedsMethods`, `nm1` and `nm2` will automatically hande
+As instances of `NeedsMethods`, `nm1` and `nm2` will automatically handle
 methods of the form `#make_<attr_name>`.
 
 The line:
