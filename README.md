@@ -7,7 +7,7 @@ to a class or module.
 
 ## Baseline Implementation
 
-The following is a simple implementation of class which defines `#method_missing`:
+The following is a bare-bones implementation of class which defines `#method_missing`:
 
 ```ruby
 class NeedsMethods
@@ -59,7 +59,7 @@ nm.blah
 
 Changes to `#method_missing` should be accompanied by corresponding changes to `#respond_to_missing?`,
 which allows instances of a class to correcly respond to `#respond_to?` and `#method` calls.  It's
-easy to overlook or forget this detail since it's likely not the primary focus of adding handlers to
+easy to overlook this detail since it's likely not the primary focus of adding handlers to
 `#method_missing`.
 
 It's also easy to forget the call to `super` when no pattern match is found - in which case all
@@ -69,18 +69,18 @@ unmatched method patterns are silently handled!
 
 To add handling of another method pattern, the following changes need to be made:
 - addition of another `elsif` block in `#method_missing`
-- addition of another ORed value in `#respond_to_missing?`
+- addition of another `||`-ed value in `#respond_to_missing?`
 - addition of another pattern-matching class method
 
 ### Large method size and method proliferation
 
-As more and more method patterns are added, `#method_missing` and `respond_to_missing?` will grow
+As more and more method patterns are added, `#method_missing` and `#respond_to_missing?` will grow
 endlessly, as will the number of pattern-matching class methods.
 
 ### Tight coupling
 
-Pattern-matching routines and their corresponding `elsif` blocks in `#method_missing` are coupled
-despite their spatial separation in the code.
+Pattern-matching class methods and their corresponding `elsif` blocks in `#method_missing` are
+tightly coupled, despite their spatial separation in the code.
 
 The shared code in `#method_missing` and `#respond_to_missing?` means that changes to one pattern
 handler can break another if not done properly.
@@ -89,15 +89,31 @@ handler can break another if not done properly.
 
 Each time a matched method is called, the entire `#method_missing` infrastructure is executed.
 
+### Dynamic updates
+
+The baseline implementation assumes that all method patterns should be handled at all times,
+which is not always the case.  Sometimes the matched patterns are derived from data not
+available to the class until the code is executing.  Correctly redefining (or perpetually
+re-aliasing) `#method_missing` and `#respond_to_missing?` can get tricky fast.
+
 ## Correcting the Downsides
 
+Most of the downsides to the baseline implementation can be solved by adding an array
+of `MethodMatcher`s to the class.  Each `MethodMatcher` has two parts: one which checks
+if the missing method should be handled, and one which does the work.  `#method_missing`
+and `#respond_to_missing?` could then be rewritten to iterate over the `MethodMatcher`
+array and act accordingly.
+
+`EagerBeaver` does this (essentially) but goes one step further: it actually adds the
+missing method to the including class and invokes it so that future calls to that
+method won't need to invoke the `#method_missing` infrastructure.
 
 ## Key Features
 
-- Method matchers can be added dynamically and cumulatively, reducing the risk
+- Method matchers can be added dynamically and independently, reducing the risk
   of accidentally altering or removing previously-added functionality.
 - Matched methods are automatically reflected in calls to `#respond_to?` and
-  `#method`, DRY-ing up code by centralizing method-matching logic.
+  `#method`.
 - Matched methods are automatically added to the including class/module and
   invoked.  Subsequent calls won't trigger `#method_missing`.
 - When a method cannot be matched, `super`'s `#method_missing` is automatically
@@ -155,13 +171,11 @@ end
 
 The `match` lambda should return a true value if the missing method name is one
 can be handled by the `MethodMatcher`.  The following example will match
-missing methods of the form `#make_<attr_name>`:
+missing methods of the form `#pattern1_<data>`:
 
 ```ruby
     mm.match = lambda {
-      /\Amake_(\w+)\z/ =~ context.missing_method_name
-      context.attr_name = Regexp.last_match ? Regexp.last_match[1] : nil
-      return Regexp.last_match
+      context.data = $1 if /\Apattern1_(\w+)/ =~ context.missing_method_name
     }
 ```
 
@@ -183,26 +197,21 @@ missing method in `NeedsMethods`:
 
 ```ruby
     mm.new_method_code = lambda {
-      code = %Q{
-        def #{context.missing_method_name}(arg)
-          puts "method \##{context.missing_method_name} has been called"
-          puts "\##{context.missing_method_name} was originally called on #{context.original_receiver}"
-          puts "#{context.attr_name} was passed from matching to code generation"
-          puts "the current call has arguments: \#{arg}"
-          return "result = \#{arg}"
-        end
-      }
-      return code
+      %Q{ def #{context.missing_method_name}
+            puts "pattern1: #{context.data}"
+          end }
     }
 ```
 
 As the example shows, it is perfectly reasonable to take advantage of work done
-by the `match` lambda (in this case, the parsing of `<attr_name>`).
+by the `match` lambda (in this case, the parsing of `<data>`).
 
 After the generated code is inserted into `NeedsMethods`, the missing method 
 call is resent to the original receiver.
 
 ### Complete Example
+
+The following is the baseline implementation above using `EagerBeaver`:
 
 ```ruby
 require 'eager_beaver'
@@ -212,22 +221,23 @@ class NeedsMethods
 
   add_method_matcher do |mm|
     mm.match = lambda {
-      /\Amake_(\w+)\z/ =~ context.missing_method_name
-      context.attr_name = Regexp.last_match ? Regexp.last_match[1] : nil
-      return Regexp.last_match
+      context.data = $1 if /\Apattern1_(\w+)/ =~ context.missing_method_name
     }
-
     mm.new_method_code = lambda {
-      code = %Q{
-        def #{context.missing_method_name}(arg)
-          puts "method \##{context.missing_method_name} has been called"
-          puts "\##{context.missing_method_name} was originally called on #{context.original_receiver}"
-          puts "#{context.attr_name} was passed from matching to code generation"
-          puts "the current call has arguments: \#{arg}"
-          return "result = \#{arg}"
-        end
-      }
-      return code
+      %Q{ def #{context.missing_method_name}
+            puts "pattern1: #{context.data}"
+          end }
+    }
+  end
+
+  add_method_matcher do |mm|
+    mm.match = lambda {
+      context.data = {val1: $1, val2: $2} if /\Apattern2_(\w+)_(\w+)/ =~ context.missing_method_name
+    }
+    mm.new_method_code = lambda {
+      %Q{ def #{context.missing_method_name}
+            puts "pattern2: #{context.data[:val1]} #{context.data[:val2]}"
+          end }
     }
   end
 end
@@ -235,104 +245,36 @@ end
 
 ## Execution
 
-Given the `NeedsMethods` class in the example above, let's work through the
-following code:
+Given the `NeedsMethods` class above:
 
 ```ruby
 nm1 = NeedsMethods.new
-puts nm1.make_thingy(10)
-puts nm1.make_widget("hi")
+
+puts "#{nm1.methods.grep /pattern/}"
+# => []                                     ## overriding #method_missing doesn't actually add methods
+puts "#{nm1.respond_to? :pattern1_match}"
+# => true                                   ## #respond_to_missing? in action!
+puts "#{nm1.method :pattern1_match}"
+# => #<Method: NeedsMethods#pattern1_match> ## #respond_to_missing? in action!
+nm1.pattern1_match
+# => pattern1: match
 
 nm2 = NeedsMethods.new
-puts nm2.make_thingy(20)
-puts nm2.make_widget("hello")
 
-nm2.dont_make_this
+puts "#{nm2.methods.grep /pattern/}"
+# => [:pattern1_match]                      ## #pattern1_match added to NeedsMethods by call on instance nm1
+nm2.pattern1_match
+# => pattern1: match                        ## no call to #method_missing
+nm2.pattern2_another_match
+# => pattern2: another match
+puts "#{nm1.methods.grep /pattern/}"
+# => [:pattern1_match, :pattern2_another_match]
+puts "#{nm2.methods.grep /pattern/}"
+# => [:pattern1_match, :pattern2_another_match]
+
+nm2.blah
+# => undefined method `blah' for #<NeedsMethods:0x007fefac1a8080> (NoMethodError)
 ```
-
-As instances of `NeedsMethods`, `nm1` and `nm2` will automatically handle
-methods of the form `#make_<attr_name>`.
-
-The line:
-```ruby
-puts nm1.make_thingy(10)
-```
-will trigger `nm1`'s `#method_missing`, which `NeedsMethods` implements thanks to
-`EagerBeaver`.  Each `MethodMatcher` associated with `EagerBeaver` is run against
-the method name `make_thingy`, and sure enough one matches.  This causes the
-following methods to be inserted to `NeedsMethods`:
-```ruby
-  def make_thingy(arg)
-    puts "method #make_thingy has been called"
-    puts "#make_thingy was originally called on #<NeedsMethods:0x007fa1bc17f498>"
-    puts "thingy was passed from matching to code generation"
-    puts "the current call has arguments: #{arg}"
-    return "result = #{arg}"
-  end
-```
-and when `#make_thingy` is resent to `nm1`, the existing method is called and 
-outputs:
-
-> method \#make_thingy has been called<br/>
-> \#make_thingy was originally called on \#\<NeedsMethods:0x007fa1bc17f498\><br/>
-> thingy was passed from matching to code generation<br/>
-> the current call has arguments: 10<br/>
-> result = 10
-
-Similarly, the line:
-```ruby
-puts nm1.make_widget("hi")
-```
-generates the code:
-```ruby
-  def make_widget(arg)
-    puts "method #make_widget has been called"
-    puts "#make_widget was originally called on #<NeedsMethods:0x007fa1bc17f498>"
-    puts "widget was passed from matching to code generation"
-    puts "the current call has arguments: #{arg}"
-    return "result = #{arg}"
-  end
-```
-and outputs:
-> method \#make_widget has been called<br/>
-> \#make_widget was originally called on \#\<NeedsMethods:0x007fa1bc17f498\><br/>
-> widget was passed from matching to code generation<br/>
-> the current call has arguments: hi<br/>
-> result = hi
-
-Note that the following lines do NOT trigger `#method_missing` because both methods
-have already been added to `NeedsMethods`:
-```ruby
-puts nm2.make_thingy(20)
-puts nm2.make_widget("hello")
-```
-This can be seen by examining the identity of the original receiver in the output:
-
-> **method \#make_thingy has been called**<br/>
-> **\#make_thingy was originally called on \#\<NeedsMethods:0x007fa1bc17f498\>**<br/>
-> **thingy was passed from matching to code generation**<br/>
-> the current call has arguments: 20<br/>
-> result = 20
-
-> **method \#make_widget has been called**<br/>
-> **\#make_widget was originally called on \#\<NeedsMethods:0x007fa1bc17f498\>**<br/>
-> **widget was passed from matching to code generation**<br/>
-> the current call has arguments: hello<br/>
-> result = hello
-
-String substitutions which were part of the generated code body (emphasized)
-reflect the circumstances of the first set of method calls, as opposed to 
-those which reflect the current call's argument.
-
-Finally, the call:
-```
-nm2.dont_make_this
-```
-will cause `NeedsMethods` to examine all of its `MethodMatcher`s and finally call
-`super`'s `#method_missing`.  Because no superclass of `NeedsMethods` handles
-`#dont_make_this`, the output is:
-
-> undefined method `dont_make_this' for \#\<NeedsMethods:0x007f8e2b991f90\> (NoMethodError)
 
 ## Contributing
 
