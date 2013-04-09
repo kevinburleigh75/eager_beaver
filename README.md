@@ -186,10 +186,10 @@ following methods to be inserted to `NeedsMethods`:
 and when `#make_thingy` is resent to `nm1`, the existing method is called and 
 outputs:
 
-> method \#make_thingy has been called
-> \#make_thingy was originally called on \#\<NeedsMethods:0x007fa1bc17f498\>
-> thingy was passed from matching to code generation
-> the current call has arguments: 10
+> method \#make_thingy has been called<br/>
+> \#make_thingy was originally called on \#\<NeedsMethods:0x007fa1bc17f498\><br/>
+> thingy was passed from matching to code generation<br/>
+> the current call has arguments: 10<br/>
 > result = 10
 
 Similarly, the line:
@@ -207,10 +207,10 @@ generates the code:
   end
 ```
 and outputs:
-> method \#make_widget has been called
-> \#make_widget was originally called on \#\<NeedsMethods:0x007fa1bc17f498\>
-> widget was passed from matching to code generation
-> the current call has arguments: hi
+> method \#make_widget has been called<br/>
+> \#make_widget was originally called on \#\<NeedsMethods:0x007fa1bc17f498\><br/>
+> widget was passed from matching to code generation<br/>
+> the current call has arguments: hi<br/>
 > result = hi
 
 Note that the following lines do NOT trigger `#method_missing` because both methods
@@ -224,13 +224,13 @@ This can be seen by examining the identity of the original receiver in the outpu
 > **method \#make_thingy has been called**<br/>
 > **\#make_thingy was originally called on \#\<NeedsMethods:0x007fa1bc17f498\>**<br/>
 > **thingy was passed from matching to code generation**<br/>
-> the current call has arguments: 20
+> the current call has arguments: 20<br/>
 > result = 20
 
 > **method \#make_widget has been called**<br/>
 > **\#make_widget was originally called on \#\<NeedsMethods:0x007fa1bc17f498\>**<br/>
 > **widget was passed from matching to code generation**<br/>
-> the current call has arguments: hello
+> the current call has arguments: hello<br/>
 > result = hello
 
 String substitutions which were part of the generated code body (emphasized)
