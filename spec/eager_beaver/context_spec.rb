@@ -7,13 +7,13 @@ describe "EagerBeaver matcher context" do
       klass = Class.new do
         include EagerBeaver
 
-        add_method_matcher do |mm|
-          mm.matcher = lambda {
+        add_method_handler do |mh|
+          mh.match = lambda {
             raise context.missing_method_name \
               unless context.missing_method_name == "aaa"
             /\Aaaa\z/ =~ context.missing_method_name 
           }
-          mm.new_method_code = lambda {
+          mh.handle = lambda {
             raise context.missing_method_name \
               unless context.missing_method_name == "aaa"
             %Q{
@@ -32,11 +32,11 @@ describe "EagerBeaver matcher context" do
       klass = Class.new do
         include EagerBeaver
 
-        add_method_matcher do |mm|
-          mm.matcher = lambda {
+        add_method_handler do |mh|
+          mh.match = lambda {
             /\Aaaa\z/ =~ context.missing_method_name
           }
-          mm.new_method_code = lambda {
+          mh.handle = lambda {
             %Q{
               def #{context.missing_method_name}
                 #{context.original_receiver.__id__}
@@ -56,12 +56,12 @@ describe "EagerBeaver matcher context" do
       klass = Class.new do
         include EagerBeaver
 
-        add_method_matcher do |mm|
-          mm.matcher = lambda {
+        add_method_handler do |mh|
+          mh.match = lambda {
             context.my_data = "hello"
             /\Aaaa\z/ =~ context.missing_method_name
           }
-          mm.new_method_code = lambda {
+          mh.handle = lambda {
             %Q{
               def #{context.missing_method_name}
                 "#{context.my_data}"

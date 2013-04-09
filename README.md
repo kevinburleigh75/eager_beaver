@@ -106,9 +106,9 @@ re-aliasing) `#method_missing` and `#respond_to_missing?` can get tricky fast.
 ## Correcting the Downsides
 
 Most of the downsides to the baseline implementation can be solved by adding an array
-of `MethodMatcher`s to the class.  Each `MethodMatcher` has two parts: one which checks
+of `MethodHandler`s to the class.  Each `MethodHandler` has two parts: one which checks
 if the missing method should be handled, and one which does the work.  `#method_missing`
-and `#respond_to_missing?` could then be rewritten to iterate over the `MethodMatcher`
+and `#respond_to_missing?` could then be rewritten to iterate over the `MethodHandler`
 array and act accordingly.
 
 `EagerBeaver` does this (essentially) but goes one step further: it actually adds the
@@ -144,9 +144,8 @@ Or install it yourself as:
 
 ### Inclusion
 
-Any class or module which includes `EagerBeaver` will gain the `add_method_matcher`
-pseudo-keyword, which [indirectly] yields an `EagerBeaver::MethodMatcher` to the
-given block:
+Any class or module which includes `EagerBeaver` will gain the `add_method_handler`
+pseudo-keyword, which [indirectly] yields a `MethodHandler` to the given block:
 
 ```ruby
 require 'eager_beaver'
@@ -154,22 +153,22 @@ require 'eager_beaver'
 class NeedsMethods
   include EagerBeaver
 
-  add_method_matcher do |mm|
+  add_method_handler do |mh|
     ...
   end
 end
 ```
 
-In this case, the resulting `MethodMatcher` is added to the end of a `MethodMatcher` list
+In this case, the resulting `MethodHandler` is added to the end of a `MethodHandler` list
 associated with `NeedsMethods`.
 
-Each `MethodMatcher` needs two things: a lambda for matching missing method names
-and a lambda for creating the code for any method names it matches:
+Each `MethodHandler` needs two things: a lambda for matching missing method names
+and a lambda for handling any method names it matches:
 
 ```ruby
-  add_method_matcher do |mm|
-    mm.match = lambda { ... }
-    mm.new_method_code = lambda { ...}
+  add_method_handler do |mh|
+    mh.match = lambda { ... }
+    mh.handle = lambda { ...}
   end
 end
 ```
@@ -177,11 +176,11 @@ end
 ### Matching
 
 The `match` lambda should return a true value if the missing method name is one
-can be handled by the `MethodMatcher`.  The following example will match
+can be handled by the `MethodHandler`.  The following example will match
 missing methods of the form `#pattern1_<data>`:
 
 ```ruby
-    mm.match = lambda {
+    mh.match = lambda {
       context.data = $1 if /\Apattern1_(\w+)/ =~ context.missing_method_name
     }
 ```
@@ -194,16 +193,16 @@ As the example shows, each `MethodMatcher` contains a `context` which provides:
 - the original method receiver instance (`context.original_receiver`)
 - a place to stash information (dynamically-generated accessors `context.<attr_name>` and `context.<attr_name>=`)
 
-This `context` is shared between the `match` and `new_method_code` lambdas, and
+This `context` is shared between the `match` and `handle` lambdas, and
 is reset between uses of each `MethodMatcher`.
 
 ### Code Generation
 
-The `new_method_code` lambda should return a string which will create the
+The `handle` lambda should return a string which will create the
 missing method in `NeedsMethods`:
 
 ```ruby
-    mm.new_method_code = lambda {
+    mh.handle = lambda {
       %Q{ def #{context.missing_method_name}
             puts "pattern1: #{context.data}"
           end }
@@ -226,22 +225,22 @@ require 'eager_beaver'
 class NeedsMethods
   include EagerBeaver
 
-  add_method_matcher do |mm|
-    mm.match = lambda {
+  add_method_handler do |mh|
+    mh.match = lambda {
       context.data = $1 if /\Apattern1_(\w+)/ =~ context.missing_method_name
     }
-    mm.new_method_code = lambda {
+    mh.handle = lambda {
       %Q{ def #{context.missing_method_name}
             puts "pattern1: #{context.data}"
           end }
     }
   end
 
-  add_method_matcher do |mm|
-    mm.match = lambda {
+  add_method_handler do |mh|
+    mh.match = lambda {
       context.data = {val1: $1, val2: $2} if /\Apattern2_(\w+)_(\w+)/ =~ context.missing_method_name
     }
-    mm.new_method_code = lambda {
+    mh.handle = lambda {
       %Q{ def #{context.missing_method_name}
             puts "pattern2: #{context.data[:val1]} #{context.data[:val2]}"
           end }
@@ -287,6 +286,6 @@ nm2.blah
 
 1. Fork it
 2. Create your feature branch (`git checkout -b my-new-feature`)
-3. Commit your changes (`git commit -am 'Added some feature'`)
+3. Comhit your changes (`git commit -am 'Added some feature'`)
 4. Push to the branch (`git push origin my-new-feature`)
 5. Create new Pull Request

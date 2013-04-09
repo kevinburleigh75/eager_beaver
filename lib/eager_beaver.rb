@@ -1,5 +1,5 @@
 require "eager_beaver/version"
-require "eager_beaver/method_matcher"
+require "eager_beaver/method_handler"
 
 module EagerBeaver
 
@@ -8,10 +8,10 @@ module EagerBeaver
   end
 
   def method_missing(method_name, *args, &block)
-    self.class.method_matchers.each do |method_matcher|
-      mm = configure_matcher method_matcher
-      if mm.match?(method_name)
-        method_string = mm.evaluate mm.new_method_code_maker
+    self.class.method_handlers.each do |method_handler|
+      mh = configure_handler method_handler
+      if mh.handles?(method_name)
+        method_string = mh.evaluate mh.handle
         self.class.class_eval method_string, __FILE__, __LINE__ + 1
         return self.send(method_name, *args, &block)
       end
@@ -20,26 +20,26 @@ module EagerBeaver
   end
 
   def respond_to_missing?(method_name, include_private=false)
-    self.class.method_matchers.each do |method_matcher|
-      mm = configure_matcher method_matcher
-      return true if mm.match?(method_name)
+    self.class.method_handlers.each do |method_handler|
+      mh = configure_handler method_handler
+      return true if mh.handles?(method_name)
     end
     super
   end
 
-  def configure_matcher(matcher)
-    mm = matcher.dup
-    mm.original_receiver = self
-    mm.original_receiver.class.context = mm
+  def configure_handler(handler)
+    mh = handler.dup
+    mh.original_receiver = self
+    mh.original_receiver.class.context = mh
   end
 
   module ClassMethods
-    def method_matchers
-      @method_matchers ||= []
+    def method_handlers
+      @method_handlers ||= []
     end
 
-    def add_method_matcher(&block)
-      method_matchers << MethodMatcher.new(&block)
+    def add_method_handler(&block)
+      method_handlers << MethodHandler.new(&block)
     end
 
     attr_accessor :context

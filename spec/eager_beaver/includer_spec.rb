@@ -10,25 +10,25 @@ describe "EagerBeaver includer" do
       end
     end
 
-    it "has #add_method_matcher" do
-      expect(@klass.methods).to include :add_method_matcher
+    it "has #add_method_handler" do
+      expect(@klass.methods).to include :add_method_handler
     end
 
-    it "has #method_matchers" do
-      expect(@klass.methods).to include :method_matchers
+    it "has #method_handlers" do
+      expect(@klass.methods).to include :method_handlers
     end
 
   end
 
-  describe "#add_method_matcher" do
+  describe "#add_method_handler" do
 
     it "registers a new method matcher" do
       klass = Class.new do
         include EagerBeaver
 
-        add_method_matcher do |mm|
-          mm.matcher = lambda { true }
-          mm.new_method_code = lambda {
+        add_method_handler do |mh|
+          mh.match  = lambda { true }
+          mh.handle = lambda {
             return %Q{
               def #{context.missing_method_name}
               end
@@ -37,7 +37,7 @@ describe "EagerBeaver includer" do
         end
       end
 
-      klass.method_matchers.size.should == 1
+      klass.method_handlers.size.should == 1
     end
 
   end

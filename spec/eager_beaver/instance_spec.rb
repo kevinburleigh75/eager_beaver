@@ -22,9 +22,9 @@ describe "instance of EagerBeaver includer" do
       klass = Class.new do
         include EagerBeaver
 
-        add_method_matcher do |mm|
-          mm.matcher = lambda { /\Aaaa_\w+\z/ =~ context.missing_method_name }
-          mm.new_method_code = lambda {
+        add_method_handler do |mh|
+          mh.match = lambda { /\Aaaa_\w+\z/ =~ context.missing_method_name }
+          mh.handle = lambda {
             %Q{
               def #{context.missing_method_name}
               end
@@ -53,9 +53,9 @@ describe "instance of EagerBeaver includer" do
       klass = Class.new do
         include EagerBeaver
 
-        add_method_matcher do |mm|
-          mm.matcher = lambda { /\Aaaa_\w+\z/ =~ context.missing_method_name }
-          mm.new_method_code = lambda {
+        add_method_handler do |mh|
+          mh.match = lambda { /\Aaaa_\w+\z/ =~ context.missing_method_name }
+          mh.handle = lambda {
             %Q{
               def #{context.missing_method_name}
               end
@@ -83,9 +83,9 @@ describe "instance of EagerBeaver includer" do
       klass = Class.new do
         include EagerBeaver
 
-        add_method_matcher do |mm|
-          mm.matcher = lambda { /\Aaaa\z/ =~ context.missing_method_name }
-          mm.new_method_code = lambda {
+        add_method_handler do |mh|
+          mh.match = lambda { /\Aaaa\z/ =~ context.missing_method_name }
+          mh.handle = lambda {
             %Q{
               def #{context.missing_method_name}
                 1
@@ -94,9 +94,9 @@ describe "instance of EagerBeaver includer" do
           }
         end
 
-        add_method_matcher do |mm|
-          mm.matcher = lambda { /\Abbb\z/ =~ context.missing_method_name }
-          mm.new_method_code = lambda {
+        add_method_handler do |mh|
+          mh.match = lambda { /\Abbb\z/ =~ context.missing_method_name }
+          mh.handle = lambda {
             %Q{
               def #{context.missing_method_name}
                 2
@@ -105,9 +105,9 @@ describe "instance of EagerBeaver includer" do
           }
         end
 
-        add_method_matcher do |mm|
-          mm.matcher = lambda { /\Abbb\z/ =~ context.missing_method_name }
-          mm.new_method_code = lambda {
+        add_method_handler do |mh|
+          mh.match = lambda { /\Abbb\z/ =~ context.missing_method_name }
+          mh.handle = lambda {
             %Q{
               def #{context.missing_method_name}
                 3
@@ -130,9 +130,9 @@ describe "instance of EagerBeaver includer" do
       klass2 = Class.new(klass1) do
         include EagerBeaver
 
-        add_method_matcher do |mm|
-          mm.matcher = lambda { /\Aaaa\z/ =~ context.missing_method_name }
-          mm.new_method_code = lambda {
+        add_method_handler do |mh|
+          mh.match = lambda { /\Aaaa\z/ =~ context.missing_method_name }
+          mh.handle = lambda {
             %Q{
               def #{context.missing_method_name}
                 1
