@@ -5,7 +5,7 @@
 `EagerBeaver` provides an interface for adding `#method_missing`-related abilities
 to a class or module.
 
-## Baseline Implementation
+## Typical Implementation
 
 The following is a bare-bones implementation of class which defines `#method_missing`:
 
@@ -60,7 +60,7 @@ nm.blah
 # => undefined method `blah' for #<NeedsMethods:0x007fb37b086548> (NoMethodError)
 ```
 
-## Downsides to the Baseline Implementation
+## Downsides to the Typical Implementation
 
 ### It's easy to forget something
 
@@ -98,14 +98,14 @@ Each time a matched method is called, the entire `#method_missing` infrastructur
 
 ### Dynamic updates
 
-The baseline implementation assumes that all method patterns should be handled at all times,
+The typical implementation assumes that all method patterns should be handled at all times,
 which is not always the case.  Sometimes the matched patterns are derived from data not
 available to the class until the code is executing.  Correctly redefining (or perpetually
 re-aliasing) `#method_missing` and `#respond_to_missing?` can get tricky fast.
 
 ## Correcting the Downsides
 
-Most of the downsides to the baseline implementation can be solved by adding an array
+Most of the downsides to the typical implementation can be solved by adding an array
 of `MethodHandler`s to the class.  Each `MethodHandler` has two parts: one which checks
 if the missing method should be handled, and one which does the work.  `#method_missing`
 and `#respond_to_missing?` could then be rewritten to iterate over the `MethodHandler`
@@ -217,7 +217,7 @@ call is resent to the original receiver.
 
 ### Complete Example
 
-The following is the baseline implementation above using `EagerBeaver`:
+The following is the typical implementation above using `EagerBeaver`:
 
 ```ruby
 require 'eager_beaver'
